@@ -36,7 +36,6 @@
     "post.logout.redirect.uris": "https://REPLACE-WITH-GATEWAY-DOMAIN/*",
     "backchannel.logout.session.required": "true",
     "backchannel.logout.revoke.offline.tokens": "false",
-    "id.token.signed.response.alg": "RS512",
     "pkce.code.challenge.method": "S256"
   }
 }

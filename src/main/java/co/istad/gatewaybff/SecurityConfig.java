@@ -9,11 +9,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.oauth2.client.oidc.authentication.ReactiveOidcIdTokenDecoderFactory;
+import org.springframework.security.oauth2.client.oidc.authentication.OidcIdTokenValidator;
 import org.springframework.security.oauth2.client.oidc.web.server.logout.OidcClientInitiatedServerLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
+import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoderFactory;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
@@ -55,21 +56,37 @@ public class SecurityConfig {
     private final ReactiveClientRegistrationRepository clientRegistrationRepository;
 
     /**
-     * Algorithm Keycloak signs ID tokens with. The {@code ai-career} realm is set
-     * to RS512, while Spring's default OIDC decoder only accepts RS256 — leaving
-     * this unset fails the login with {@code [invalid_id_token] Unsupported
-     * algorithm of RS512}. The backend resource server already accepts
-     * RS256/384/512, so this keeps the two in step.
+     * Algorithms accepted for Keycloak's ID token signature.
+     *
+     * <p>Spring's default OIDC decoder accepts RS256 only, so a realm signing
+     * with anything else fails login with {@code [invalid_id_token] Unsupported
+     * algorithm of …} — and the redirect to {@code /login?error} looks like a
+     * 404, because the gateway has no such page.
+     *
+     * <p>Pinning a single algorithm here means a realm whose default differs
+     * breaks the deployment, so accept the same set the backend resource server
+     * does and let Keycloak pick.
      */
-    @Value("${app.oidc.id-token-signature-algorithm:RS512}")
-    private String idTokenSignatureAlgorithm;
+    @Value("${app.oidc.id-token-signature-algorithms:RS256,RS384,RS512}")
+    private String[] idTokenSignatureAlgorithms;
 
     @Bean
     public ReactiveJwtDecoderFactory<ClientRegistration> idTokenDecoderFactory() {
-        ReactiveOidcIdTokenDecoderFactory factory = new ReactiveOidcIdTokenDecoderFactory();
-        factory.setJwsAlgorithmResolver(registration ->
-                SignatureAlgorithm.from(idTokenSignatureAlgorithm));
-        return factory;
+        return registration -> {
+            NimbusReactiveJwtDecoder decoder = NimbusReactiveJwtDecoder
+                    .withJwkSetUri(registration.getProviderDetails().getJwkSetUri())
+                    .jwsAlgorithms(algorithms -> {
+                        for (String name : idTokenSignatureAlgorithms) {
+                            algorithms.add(SignatureAlgorithm.from(name.trim()));
+                        }
+                    })
+                    .build();
+
+            // Same validator Spring's own factory installs — issuer, audience,
+            // expiry and azp checks must not be lost by supplying our decoder.
+            decoder.setJwtValidator(new OidcIdTokenValidator(registration));
+            return decoder;
+        };
     }
 
     @Bean

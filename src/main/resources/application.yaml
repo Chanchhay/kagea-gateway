@@ -43,6 +43,11 @@ spring:
 
             # Catch-all, and therefore last: anything that is not /api/** is the
             # Next.js app — pages, /_next/** assets, favicon.
+            #
+            # In production this points at Vercel. The Host header sent upstream
+            # is the one from this URI (the gateway does not preserve the
+            # original), which is exactly what Vercel needs to resolve the
+            # project — so do not enable preserve-host-header here.
             - id: ai-career-app
               uri: ${FRONTEND_URI:http://localhost:3000}
               predicates:
