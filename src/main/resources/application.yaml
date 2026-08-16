@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: gateway-bff
+
+  # Keeps the client secret out of version control. `.env` is gitignored, and
+  # `optional:` lets the app still start when the values arrive as real
+  # environment variables instead (Docker, Railway, CI).
+  config:
+    import: optional:file:.env[.properties]
+
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:9090/realms/ai-career}
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: ${KEYCLOAK_BFF_CLIENT_ID:ai-career-bff}
+            client-secret: ${KEYCLOAK_BFF_CLIENT_SECRET}
+            authorization-grant-type: authorization_code
+            scope:
+              - openid
+              - profile
+              - email
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            # TokenRelay copies the session's access token onto the outgoing
+            # request as `Authorization: Bearer …`. Without it the backend —
+            # a stateless OAuth2 resource server — rejects everything as
+            # anonymous, so this filter is what makes the BFF work at all.
+            - id: ai-career-api
+              uri: ${BACKEND_URI:http://localhost:8080}
+              predicates:
+                - Path=/api/**
+              filters:
+                - TokenRelay=
+
+            # Catch-all, and therefore last: anything that is not /api/** is the
+            # Next.js app — pages, /_next/** assets, favicon.
+            - id: ai-career-app
+              uri: ${FRONTEND_URI:http://localhost:3000}
+              predicates:
+                - Path=/**
+
+server:
+  port: ${PORT:8090}
+
+  # Railway terminates TLS in front of this container, so the app itself sees
+  # plain HTTP. Without honouring X-Forwarded-*, Spring builds the OAuth2
+  # redirect_uri as http://…, Keycloak rejects it as a mismatch, and login fails
+  # in production while working perfectly on localhost. Same for {baseUrl} in
+  # the post-logout redirect.
+  forward-headers-strategy: framework
+
+  reactive:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
+        # Sent over HTTPS only in production; must stay false on plain-HTTP
+        # localhost or the browser silently drops the session cookie.
+        secure: ${SESSION_COOKIE_SECURE:false}
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    org.springframework.security: INFO

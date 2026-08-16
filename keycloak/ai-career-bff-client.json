@@ -1,0 +1,42 @@
+{
+  "clientId": "ai-career-bff",
+  "name": "AI Career Gateway BFF",
+  "description": "Spring Cloud Gateway backend-for-frontend. Holds the OAuth2 session and relays access tokens to the API; the browser never receives a token.",
+  "protocol": "openid-connect",
+  "enabled": true,
+  "publicClient": false,
+  "clientAuthenticatorType": "client-secret",
+  "standardFlowEnabled": true,
+  "directAccessGrantsEnabled": false,
+  "implicitFlowEnabled": false,
+  "serviceAccountsEnabled": false,
+  "redirectUris": [
+    "https://REPLACE-WITH-GATEWAY-DOMAIN/login/oauth2/code/keycloak"
+  ],
+  "webOrigins": [
+    "https://REPLACE-WITH-GATEWAY-DOMAIN"
+  ],
+  "frontchannelLogout": false,
+  "fullScopeAllowed": true,
+  "defaultClientScopes": [
+    "web-origins",
+    "acr",
+    "profile",
+    "roles",
+    "basic",
+    "email"
+  ],
+  "optionalClientScopes": [
+    "address",
+    "phone",
+    "offline_access",
+    "microprofile-jwt"
+  ],
+  "attributes": {
+    "post.logout.redirect.uris": "https://REPLACE-WITH-GATEWAY-DOMAIN/*",
+    "backchannel.logout.session.required": "true",
+    "backchannel.logout.revoke.offline.tokens": "false",
+    "id.token.signed.response.alg": "RS512",
+    "pkce.code.challenge.method": "S256"
+  }
+}
