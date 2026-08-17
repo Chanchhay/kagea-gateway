@@ -41,8 +41,25 @@ spring:
               filters:
                 - TokenRelay=
 
-            # Catch-all, and therefore last: anything that is not /api/** is the
-            # Next.js app — pages, /_next/** assets, favicon.
+            # The admin console, a second Next.js app. It is configured with
+            # `basePath: "/admin"`, so *everything* it serves — pages and its
+            # own /admin/_next/** assets alike — lives under this prefix and a
+            # single path predicate is enough to split the two frontends.
+            #
+            # Without that basePath the admin pages would load and then ask for
+            # /_next/** , which this route does not match: the chunks would come
+            # from the main app instead and the console would render blank.
+            #
+            # Ordered before the catch-all; its /api/v1/admin/** and
+            # /api/v1/moderator/** calls are still served by the API route above.
+            - id: ai-career-admin
+              uri: ${ADMIN_FRONTEND_URI:http://localhost:3001}
+              predicates:
+                - Path=/admin/**
+
+            # Catch-all, and therefore last: anything that is not /api/** or
+            # /admin/** is the main Next.js app — pages, /_next/** assets,
+            # favicon.
             #
             # In production this points at Vercel. The Host header sent upstream
             # is the one from this URI (the gateway does not preserve the

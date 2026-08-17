@@ -42,6 +42,10 @@ public class SecurityConfig {
             "/profile",
             "/job-seeker/**",
             "/recruiter/**",
+            // The whole admin console, its /admin/_next/** assets included. It
+            // has no signed-out view, so bouncing to Keycloak at the door beats
+            // serving a shell that can only 401 on every call it makes.
+            "/admin/**",
     };
 
     /** Backend paths needing a signed-in user; the rest of /api stays public. */
@@ -50,6 +54,10 @@ public class SecurityConfig {
             "/api/v1/job-seeker/**",
             "/api/v1/recruiter/**",
             "/api/v1/moderator/**",
+            // Taxonomy writes. The backend leaves these unauthenticated today,
+            // but the console is the only caller and it is always signed in, so
+            // requiring a session here costs nothing and closes the hole early.
+            "/api/v1/admin/**",
             "/api/v1/files/**",
     };
 

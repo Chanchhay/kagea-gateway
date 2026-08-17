@@ -1,0 +1,20 @@
+{
+  "clientId": "ai-career-bff-local",
+  "name": "AI Career Gateway BFF (local development)",
+  "enabled": true,
+  "protocol": "openid-connect",
+  "publicClient": false,
+  "standardFlowEnabled": true,
+  "directAccessGrantsEnabled": false,
+  "implicitFlowEnabled": false,
+  "serviceAccountsEnabled": false,
+  "redirectUris": [
+    "http://localhost:8090/login/oauth2/code/keycloak"
+  ],
+  "webOrigins": [
+    "http://localhost:8090"
+  ],
+  "attributes": {
+    "post.logout.redirect.uris": "http://localhost:8090/*"
+  }
+}
