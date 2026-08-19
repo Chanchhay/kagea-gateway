@@ -1,0 +1,16 @@
+.git
+.gradle
+.idea
+.vscode
+build
+out
+*.iml
+*.log
+.env
+.env.*
+!.env.example
+Jenkinsfile
+keycloak
+*
+!Dockerfile.ci
+!app.jar

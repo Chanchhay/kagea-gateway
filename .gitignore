@@ -38,3 +38,4 @@ out/
 
 ### Local secrets ###
 .env
+/app.jar

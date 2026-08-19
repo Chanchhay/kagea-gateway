@@ -1,0 +1,17 @@
+FROM eclipse-temurin:25-jre-alpine
+
+WORKDIR /app
+
+RUN addgroup -S spring \
+    && adduser -S spring -G spring \
+    && apk add --no-cache curl
+
+COPY --chown=spring:spring app.jar /app/app.jar
+
+USER spring
+
+EXPOSE 8090
+
+ENV JAVA_OPTS=""
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
